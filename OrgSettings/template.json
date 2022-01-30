@@ -1,0 +1,23 @@
+{
+    "Title":  "Manual STIG Entries",
+    "MFRs":  [
+                 "V-1234"
+             ],
+    "POAMS":  [
+                  "V-1234"
+              ],
+    "Locations":  {
+                      "MFRs":  "\\\\zhtx-bs-013v\\cyod\\07--Cyber 365\\04--Supporting Documents\\MFRs",
+                      "POAMS":  "\\\\zhtx-bs-013v\\CYOD\\07--Cyber 365\\04--Supporting Documents\\POAMs"
+                  },
+    "Manual_Entries":  [
+                           {
+                               "Vuln_ID":  "V-205624",
+                               "Benchmark":  "Microsoft Windows Server 2019 Security Technical Implementation Guide :: Version 2, Release: 2 Benchmark Date: 04 May 2021",
+                               "Rule_Title":  "Windows Server 2019 must automatically remove or disable temporary user accounts after 72 hours.",
+                               "Rule_ID":  "SV-205624r569188_rule",
+                               "Status":  "NotAFinding",
+                               "Comment":  ""
+                           }
+                       ]
+}
