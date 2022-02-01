@@ -1,12 +1,31 @@
-#Requires -Version 5.0
-#Original framework by Chris Steele (1456084571)
-#3.0+ by SSgt Michael Calabrese (1468714589)
-#This script will automate STIG checking, No changes will be made
-#This script will take the baseline checklist file, edit it, and export a new one
-#Each STIG check is based on the Rule_ID of the listed vulnerability (Since the same vuln ID is reused across OS's and when DISA updated the STIG details)
-#If any items are still marked as Not reviewed, then its possible a new version of the STIG is being checked than what was coded
-
-<# Revision History
+#Requires -Version 5
+<#
+.SYNOPSIS
+  This script will automate STIG checking, No changes will be made
+.DESCRIPTION
+  Original framework by Chris Steele (1456084571)
+  This script will take the baseline checklist file, edit it, and export a new one
+  Each STIG check is based on the Rule_ID of the listed vulnerability (Since the same vuln ID is reused across OS's and when DISA updated the STIG details)
+  If any items are still marked as Not reviewed, then its possible a new version of the STIG is being checked than what was coded
+.PARAMETER <Parameter_Name>
+    <Brief description of parameter input required. Repeat this attribute if required>
+.INPUTS
+  <Inputs if any, otherwise state None>
+.OUTPUTS
+  <Outputs if any, otherwise state None - example: Log file stored in C:\Windows\Temp\<name>.log>
+.NOTES
+  Version:        5.0
+  Author:         Michael Calabrese
+  Creation Date:  Unknown
+  Edit Date:      1/30/2022
+  Purpose/Change: Updated to work with SCAPer GUI
+  ToDo:
+    - Write some more documentation on this
+    - Fix the AFNET specific details
+  
+.EXAMPLE
+  <Example goes here. Repeat this attribute for more than one example>
+.ChangeLog
 9/17/18 : Chris Steele (1456084571) - Script development started
 9/27/18 : Chris Steele (1456084571) - Initial version complete; includes STIGs for 2012 R2 MS, DC, IE 11, and .NET
 11/9/18 : Chris Steele (1456084571) - Started naming script by file version, 1.3
@@ -46,8 +65,6 @@ $asciiString = ("43 72 65 61 74 65 64 20 62 79 20 4d 69 63 68 61 65 6c 20 43 61 
 $Global:ServerRole = Get-WmiObject Win32_OperatingSystem | select -ExpandProperty ProductType #1 is Workstation, 2 is Domain Controller, 3 is Member Server
 $Global:OS = (Get-WmiObject -class Win32_OperatingSystem).Caption
 $stopwatch=[system.diagnostics.stopwatch]::StartNew()
-$workingDir=(Split-Path $PSScriptRoot -Parent)
-$script = Get-Content $PSCommandPath
 $NotChecked = @() #An array to hold the Rule ID's we don't have checks for
 #endregion Initialize Vars
 
@@ -55,7 +72,7 @@ $NotChecked = @() #An array to hold the Rule ID's we don't have checks for
 . .\Functions.ps1
 
 #Start logging, this is going to help in the long run
-Start-Transcript "$workingDir\Logs\SCAPer.log" -Force | Out-Null
+Start-Transcript (Join-Path $logFolder 'SCAPer.log') -Force | Out-Null
 
 #region Load Checklist
 Switch($OS) {
@@ -80,16 +97,16 @@ Switch($ServerRole) {
 }
 
 try {
-    $cklFilepath=Get-ChildItem "$workingdir\Checklists" -Filter "$STIG_OS $STIG_TYPE Checklist *.ckl" | Sort-Object -Descending | Select-Object -First 1
+    $cklFilepath=Get-ChildItem $checklistFolder -Filter "$STIG_OS $STIG_TYPE Checklist *.ckl" | Sort-Object -Descending | Select-Object -First 1
     [xml]$Global:checklist = Get-Content $($cklFilepath.fullname)
 } catch {
-    Read-Host "Unable to find checklist in folder: $workingdir\Checklists"
+    Read-Host "Unable to find checklist in folder: $checklistFolder"
     exit
 }
 #endregion Load Checklist
 
 #region Org Settings Import
-$orgsettingfile = Get-Item "$workingDir\OrgSettings\*.json" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+$orgsettingfile = Get-Item "$orgSettingsFolder\*.json" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
 $orgsettings = Get-Content $orgsettingfile | ConvertFrom-Json
 $validation=$orgsettings | Validate-OrgSettings
 #endregion Org Settings Import
@@ -116,7 +133,7 @@ if ($validation) {
 #endregion Display Welcome Message
 
 #region STIG Module Import
-$STIGModules = Get-Item $workingDir\STIGS\*.psm1
+$STIGModules = Get-Item "$STIGFolder\*.psm1"
 $STIGModules | Import-Module -WarningAction SilentlyContinue -Force
 Write-Host "`nSuccessfully imported the following STIG Modules:`n$($STIGModules.BaseName -join "`n")" -ForegroundColor DarkCyan
 Write-Host "==================================================================" -ForegroundColor DarkCyan
@@ -320,7 +337,7 @@ STIGRef
 }
 
 #If we check STIGs, then write our changes to the checklist file
-Set-Content -Value $checklist.Innerxml -Path "$workingdir\$env:computername.ckl" -Force
+Set-Content -Value $checklist.Innerxml -Path "$rootPath\$env:computername.ckl" -Force
 
 #If there was anything that we don't have a case for, notify the user
 if ($NotChecked.count -gt 0) {
